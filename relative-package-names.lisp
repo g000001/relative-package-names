@@ -15,6 +15,26 @@
   (pushnew :relative-package-names *features*))
 
 
+(defun stringify-name (name kind)
+  (typecase name
+    (string (coerce name 'simple-string))
+    (symbol (symbol-name name))
+    (base-char
+     (let ((res (make-string 1)))
+       (setf (schar res 0) name)
+       res))
+    (t
+     (error "Bogus ~A name: ~S" kind name))))
+
+
+;;; package-namify  --  Internal
+;;;
+;;;    Make a package name into a simple-string.
+;;;
+(defun package-namify (n)
+  (stringify-name n "package"))
+
+
 ;;; package-name-to-package  --  Internal
 ;;;
 ;;; Given a package name, a simple-string, do a package name lookup.
@@ -34,7 +54,7 @@
       (let ((name (sb-impl::package-%name thing)))
 	(or name
 	    (error "Can't do anything to a deleted package: ~S" thing)))
-      (sb-impl::package-namify thing))) 
+      (package-namify thing))) 
 
 
 ;;; package-parent  --  Internal.
@@ -167,19 +187,18 @@
 ;;; find-package  --  Public
 ;;;
 ;;;
-(sb-ext:without-package-locks 
+(sb-ext:without-package-locks
   (defun cl:find-package (name)
     "Find the package having the specified name."
     (if (packagep name)
         name
-        (let ((name (sb-impl::package-namify name)))
+        (let ((name (package-namify name)))
           (or (package-name-to-package name)
-              (relative-package-name-to-package name)))))) 
+              (relative-package-name-to-package name))))))
 
 
 (mark-supported)
 
 
 ;;; *EOF* 
-
 
